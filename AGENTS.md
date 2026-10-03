@@ -49,3 +49,13 @@ Putar/Unduh. Episode lengkap: sinopsis/genre hanya ada di halaman series —
 Sama seperti NsNime. Tambahan: dump `uiautomator` tidak bisa diandalkan untuk
 memotret kontrol player (lambat + node GONE hilang) — uji tombol rel dengan
 rantai tap cepat dalam SATU perintah shell lalu screenshot.
+
+## Pelajaran build
+- Build incremental di sini TIDAK bisa dipercaya (pernah hasilkan Frankenstein:
+  UI campur kode lama/baru). Untuk APK rilis/uji SELALU `clean assembleDebug
+  --no-build-cache`, lalu verifikasi isi dex (`unzip -p ... classes*.dex |
+  grep -c <simbol-baru>`) + `force-stop` sebelum install/uji.
+- Setelah `install -r`, proses app kadang STALE — selalu `force-stop` dulu.
+- Dump uiautomator hanya memuat baris RecyclerView yang menempel (tidak bisa
+  dipakai membuktikan seksi tidak ada); screenshot lebih terpercaya. Dump juga
+  melewatkan node GONE dan lambat (kontrol player keburu hide).

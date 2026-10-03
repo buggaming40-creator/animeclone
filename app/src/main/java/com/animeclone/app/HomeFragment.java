@@ -14,10 +14,10 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -73,6 +73,8 @@ public class HomeFragment extends Fragment {
 
     private final List<AnimeItem> all = new ArrayList<>();
     private final List<AnimeItem> ongoingAll = new ArrayList<>();
+    /** Hasil probe mentah (studio/genre/sinopsis/tanggal) untuk Rekom + Jadwal. */
+    private final List<Oploverz.Series> liteSeries = new ArrayList<>();
     private String filter = HomeAdapter.FILTER_ALL;
     private boolean loadedOnce;
 
@@ -113,6 +115,7 @@ public class HomeFragment extends Fragment {
         adapter.setOnSectionClick(key -> {
             if ("history".equals(key)) gotoTab(PagerAdapter.PAGE_HISTORY);
             else if ("genres".equals(key)) showGenreIndex();
+            else if ("schedule".equals(key)) showSchedule();
         });
         adapter.setOnGenrePick(this::searchGenre);
         adapter.setOnFilterPick(this::applyFilter);
@@ -208,6 +211,89 @@ public class HomeFragment extends Fragment {
         return new GridLayoutManager(requireContext(), span);
     }
 
+    /** Tampilkan tautan Jadwal hanya bila ada tanggal rilis terurai. */
+    private void updateScheduleLink() {
+        if (adapter != null) adapter.setHasSchedule(hasDated(liteSeries));
+    }
+
+    private static boolean hasDated(List<Oploverz.Series> list) {
+        if (list == null) return false;
+        for (Oploverz.Series s : list) {
+            if (s != null && !s.episodes.isEmpty()
+                    && !Utils.weekdayOf(s.episodes.get(0).date).isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Jadwal rilis ala AL: kelompokkan judul menurut hari episode
+     * terbarunya (dari tanggal situs). Tanpa tanggal = tidak ditampilkan.
+     */
+    private void showSchedule() {
+        if (getContext() == null) return;
+        String[] order = {"Senin", "Selasa", "Rabu", "Kamis",
+                "Jumat", "Sabtu", "Minggu"};
+        java.util.LinkedHashMap<String, List<Oploverz.Series>> byDay =
+                new java.util.LinkedHashMap<>();
+        for (String d : order) byDay.put(d, new ArrayList<>());
+        for (Oploverz.Series s : liteSeries) {
+            if (s == null || s.episodes.isEmpty()) continue;
+            String day = Utils.weekdayOf(s.episodes.get(0).date);
+            if (!day.isEmpty() && byDay.containsKey(day)) byDay.get(day).add(s);
+        }
+
+        android.widget.LinearLayout root = new android.widget.LinearLayout(requireContext());
+        root.setOrientation(android.widget.LinearLayout.VERTICAL);
+        int pad = dp(4);
+        root.setPadding(pad, pad, pad, pad);
+        int count = 0;
+        for (String day : order) {
+            List<Oploverz.Series> items = byDay.get(day);
+            if (items == null || items.isEmpty()) continue;
+            TextView dh = new TextView(requireContext());
+            dh.setText(day);
+            dh.setTextSize(15);
+            dh.setTypeface(null, android.graphics.Typeface.BOLD);
+            dh.setTextColor(com.google.android.material.color.MaterialColors.getColor(
+                    root, com.google.android.material.R.attr.colorPrimary));
+            dh.setPadding(dp(8), dp(10), dp(8), dp(4));
+            root.addView(dh);
+            for (Oploverz.Series s : items) {
+                TextView row = new TextView(requireContext());
+                String ep = s.episodes.isEmpty() ? ""
+                        : (" • " + Utils.relDate(s.episodes.get(0).date));
+                row.setText("•  " + s.title + ep);
+                row.setTextSize(14);
+                row.setTextColor(androidx.core.content.ContextCompat.getColor(
+                        requireContext(), R.color.text_primary));
+                row.setPadding(dp(8), dp(7), dp(8), dp(7));
+                row.setClickable(true);
+                row.setFocusable(true);
+                final Oploverz.Series pick = s;
+                row.setOnClickListener(x -> open(new AnimeItem(
+                        pick.title,
+                        pick.seriesUrl.isEmpty() ? "" : pick.seriesUrl,
+                        pick.thumb, "")));
+                root.addView(row);
+                count++;
+            }
+        }
+        if (count == 0) {
+            Toast.makeText(requireContext(),
+                    R.string.no_schedule, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        android.widget.ScrollView sv = new android.widget.ScrollView(requireContext());
+        sv.addView(root);
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.schedule_title)
+                .setView(sv)
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
     /** Sapaan menurut jam: Pagi/Siang/Sore/Malam. */
     private String greetingText() {
         int h = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
@@ -229,7 +315,7 @@ public class HomeFragment extends Fragment {
     /** Lonceng/pengumuman: dialog info aplikasi (tanpa login). */
     private void showAnnouncement() {
         if (getContext() == null) return;
-        new AlertDialog.Builder(requireContext())
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.announce_title)
                 .setMessage(R.string.announce_dialog)
                 .setPositiveButton(R.string.ok_label, null)
@@ -246,7 +332,7 @@ public class HomeFragment extends Fragment {
     /** Indeks genre: daftar netral — ketuk = cari genre tersebut. */
     private void showGenreIndex() {
         if (getContext() == null) return;
-        new AlertDialog.Builder(requireContext())
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.genre_index_title)
                 .setItems(GENRE_INDEX, (d, which) -> searchGenre(GENRE_INDEX[which]))
                 .setNegativeButton(R.string.cancel, null)
@@ -287,6 +373,7 @@ public class HomeFragment extends Fragment {
                 adapter.setTop(new ArrayList<>());
                 adapter.setOngoing(new ArrayList<>());
                 adapter.setHistory(new ArrayList<>());
+                adapter.setRekom(new ArrayList<Oploverz.Series>());
                 setupBanner(new ArrayList<>());
                 showEmpty(true, R.string.err_net);
             }
@@ -308,29 +395,60 @@ public class HomeFragment extends Fragment {
 
         Async.go(() -> {
             List<AnimeItem> found = new ArrayList<>();
+            List<Oploverz.Series> lites = new ArrayList<>();
             for (AnimeItem a : probe) {
                 try {
                     Oploverz.Series s = Oploverz.loadSeriesLite(a.url);
-                    String st = s == null || s.status == null ? "" : s.status;
+                    if (s == null) continue;
+                    lites.add(s);
+                    String st = s.status == null ? "" : s.status;
                     if (st.toLowerCase(Locale.ROOT).contains("ongoing")) found.add(a);
                 } catch (Throwable ignored) {
                     // Gagal memuat satu judul bukan alasan membatalkan seluruh seksi.
                 }
                 if (found.size() >= 5) break;
             }
-            return found;
-        }, new Async.Done<List<AnimeItem>>() {
-            @Override public void ok(List<AnimeItem> result) {
+            // Kembalikan keduanya: ongoing untuk seksi Ongoing, lite untuk
+            // Rekomendasi + Jadwal (studio/genre/sinopsis/tanggal riil).
+            ArrayList<Object> out = new ArrayList<>();
+            out.add(found);
+            out.add(lites);
+            return out;
+        }, new Async.Done<ArrayList<Object>>() {
+            @Override public void ok(ArrayList<Object> result) {
                 if (!isAdded() || adapter == null) return;
                 ongoingAll.clear();
-                if (result != null) ongoingAll.addAll(result);
+                liteSeries.clear();
+                if (result != null && result.size() == 2) {
+                    @SuppressWarnings("unchecked")
+                    List<AnimeItem> found = (List<AnimeItem>) result.get(0);
+                    @SuppressWarnings("unchecked")
+                    List<Oploverz.Series> lites = (List<Oploverz.Series>) result.get(1);
+                    if (found != null) ongoingAll.addAll(found);
+                    if (lites != null) liteSeries.addAll(lites);
+                }
                 adapter.setOngoing(filterList(ongoingAll));
+                adapter.setRekom(filterRekom());
+                updateScheduleLink();
             }
 
             @Override public void err(Throwable t) {
                 if (isAdded() && adapter != null) adapter.setOngoing(null);
             }
         });
+    }
+
+    /** Rekomendasi mengikuti filter aktif (cocok judul + meta). */
+    private List<Oploverz.Series> filterRekom() {
+        if (HomeAdapter.FILTER_ALL.equals(filter)) return new ArrayList<>(liteSeries);
+        List<Oploverz.Series> out = new ArrayList<>();
+        for (Oploverz.Series s : liteSeries) {
+            if (s == null) continue;
+            String hay = ((s.title == null ? "" : s.title) + " "
+                    + String.join(" ", s.genres)).toLowerCase(Locale.ROOT);
+            if (hay.contains(filter)) out.add(s);
+        }
+        return out;
     }
 
     // ---------------------------------------------------------------- filter
@@ -350,6 +468,7 @@ public class HomeFragment extends Fragment {
         adapter.setLatest(f);
         adapter.setTop(topOf(f));
         adapter.setOngoing(filterList(ongoingAll));
+        adapter.setRekom(filterRekom());
         setupBanner(f);
     }
 

@@ -23,12 +23,11 @@
         android:id="@+id/uiSectionHint"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@drawable/ui_bg_pill"
-        android:paddingEnd="10dp"
-        android:paddingStart="10dp"
+        android:paddingEnd="4dp"
+        android:paddingStart="4dp"
         android:paddingVertical="4dp"
         android:textColor="?attr/colorPrimary"
-        android:textSize="11sp"
+        android:textSize="12sp"
         android:textStyle="bold"
         android:visibility="gone" />
 </LinearLayout>

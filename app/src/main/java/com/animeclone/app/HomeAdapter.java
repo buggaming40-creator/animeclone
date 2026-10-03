@@ -4,6 +4,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -40,6 +41,7 @@ public class HomeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final int TYPE_HISTORY_ROW = 3;
     private static final int TYPE_GENRE = 4;
     private static final int TYPE_ONGOING_HEAD = 5;
+    private static final int TYPE_REKOM = 6;
 
     /** Mode filter ongoing: "all" / "anime" / "donghua". */
     public static final String FILTER_ALL = "all";
@@ -58,15 +60,22 @@ public class HomeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         final String key;
         final AnimeItem item;
         final List<AnimeItem> items;
+        final Oploverz.Series series;
 
         Row(int type, int titleRes, int hintRes, String key,
             AnimeItem item, List<AnimeItem> items) {
+            this(type, titleRes, hintRes, key, item, items, null);
+        }
+
+        Row(int type, int titleRes, int hintRes, String key,
+            AnimeItem item, List<AnimeItem> items, Oploverz.Series series) {
             this.type = type;
             this.titleRes = titleRes;
             this.hintRes = hintRes;
             this.key = key;
             this.item = item;
             this.items = items;
+            this.series = series;
         }
     }
 
@@ -77,7 +86,8 @@ public class HomeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private final List<AnimeItem> ongoing = new ArrayList<>();
     private final List<AnimeItem> top = new ArrayList<>();
     private final List<HistoryItem> history = new ArrayList<>();
-    private boolean hasOngoing, hasTop, hasHistory;
+    private final List<Oploverz.Series> rekom = new ArrayList<>();
+    private boolean hasOngoing, hasTop, hasHistory, hasRekom, hasSchedule;
     private String filter = FILTER_ALL;
     private int latestPos;
 
@@ -128,6 +138,26 @@ public class HomeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         rebake();
     }
 
+    /** Seksi Rekomendasi — kartu kaya (studio/genre/sinopsis riil). */
+    public void setRekom(List<Oploverz.Series> items) {
+        rekom.clear();
+        if (items != null) {
+            int n = Math.min(items.size(), 6);
+            for (int i = 0; i < n; i++) {
+                if (items.get(i) != null) rekom.add(items.get(i));
+            }
+        }
+        hasRekom = !rekom.isEmpty();
+        rebake();
+    }
+
+    /** Tautan "Lihat Jadwal" tampil hanya bila ada tanggal terurai. */
+    public void setHasSchedule(boolean v) {
+        if (hasSchedule == v) return;
+        hasSchedule = v;
+        rebake();
+    }
+
     /** Pil filter aktif pada kepala Ongoing (disorot). */
     public void setFilter(String mode) {
         filter = mode == null ? FILTER_ALL : mode;
@@ -161,6 +191,12 @@ public class HomeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             rows.add(new Row(TYPE_SECTION, R.string.section_top, 0, null, null, null));
             rows.add(new Row(TYPE_ROW, 0, 0, null, null, new ArrayList<>(top)));
         }
+        if (hasRekom) {
+            rows.add(new Row(TYPE_SECTION, R.string.section_rekom, 0, null, null, null));
+            for (Oploverz.Series s : rekom) {
+                rows.add(new Row(TYPE_REKOM, 0, 0, null, null, null, s));
+            }
+        }
         notifyDataSetChanged();
     }
 
@@ -191,6 +227,9 @@ public class HomeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         if (type == TYPE_ONGOING_HEAD) {
             return new OngoingHeadVH(
                     inf.inflate(R.layout.ui_item_ongoing_head, parent, false));
+        }
+        if (type == TYPE_REKOM) {
+            return new RekomVH(inf.inflate(R.layout.ui_item_rekom, parent, false));
         }
         return new PosterVH(inf.inflate(R.layout.item_anime, parent, false));
     }
@@ -233,7 +272,13 @@ public class HomeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
 
         if (row.type == TYPE_ONGOING_HEAD) {
-            ((OngoingHeadVH) holder).bind(filter, filterPick);
+            ((OngoingHeadVH) holder).bind(filter, filterPick,
+                    hasSchedule ? sectionClick : null);
+            return;
+        }
+
+        if (row.type == TYPE_REKOM) {
+            bindRekom((RekomVH) holder, row.series);
             return;
         }
 
@@ -258,6 +303,68 @@ public class HomeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         String last = (idx >= 0) ? m.substring(idx + 3).trim() : m;
         if (last.length() > 16) last = m;
         return last;
+    }
+
+    /** Kartu kaya Rekomendasi: poster, pil, genre, studio, sinopsis (riil). */
+    private void bindRekom(final RekomVH h, final Oploverz.Series s) {
+        if (s == null) return;
+        com.animeclone.app.ImageLoader.load(s.thumb, h.thumb);
+
+        int eps = s.episodes.size();
+        h.eps.setText(eps <= 0 ? "" : eps + " Eps");
+        h.eps.setVisibility(eps <= 0 ? View.GONE : View.VISIBLE);
+        String st = s.statusWord.isEmpty() ? s.status : s.statusWord;
+        if (st.contains("·")) st = st.substring(0, st.indexOf('·')).trim();
+        h.status.setText(st);
+        h.status.setVisibility(st.isEmpty() ? View.GONE : View.VISIBLE);
+        String date = !s.episodes.isEmpty()
+                ? com.animeclone.app.Utils.shortDate(s.episodes.get(0).date) : "";
+        h.date.setText(date);
+        h.date.setVisibility(date.isEmpty() ? View.GONE : View.VISIBLE);
+
+        h.title.setText(s.title);
+
+        h.genres.removeAllViews();
+        int shown = 0;
+        for (int i = 0; i < s.genres.size() && shown < 3; i++, shown++) {
+            h.genres.addView(genrePill(h.genres, s.genres.get(i)));
+        }
+        if (s.genres.size() > 3) {
+            h.genres.addView(genrePill(h.genres,
+                    "+" + (s.genres.size() - 3)));
+        }
+        h.genres.setVisibility(
+                h.genres.getChildCount() == 0 ? View.GONE : View.VISIBLE);
+
+        String studio = s.studio.isEmpty() ? s.type : s.studio;
+        h.studio.setText(studio);
+        h.studio.setVisibility(studio.isEmpty() ? View.GONE : View.VISIBLE);
+
+        h.syn.setText(s.synopsis);
+        h.syn.setVisibility(s.synopsis.isEmpty() ? View.GONE : View.VISIBLE);
+
+        h.itemView.setOnClickListener(v -> {
+            if (click != null) click.onPick(new AnimeItem(
+                    s.title, s.seriesUrl.isEmpty() ? "" : s.seriesUrl,
+                    s.thumb, ""));
+        });
+    }
+
+    private static TextView genrePill(ViewGroup parent, String text) {
+        TextView c = new TextView(parent.getContext());
+        c.setText(text);
+        c.setTextSize(11);
+        c.setTextColor(0xFFB9B4D6);
+        c.setBackgroundResource(R.drawable.ui_bg_genre_pill);
+        int d = (int) (parent.getContext().getResources()
+                .getDisplayMetrics().density * 10);
+        c.setPadding(d, d / 2, d, d / 2);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.setMarginEnd(d / 2);
+        c.setLayoutParams(lp);
+        return c;
     }
 
     // ------------------------------------------------------------ VH
@@ -326,16 +433,19 @@ public class HomeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
     }
 
-    /** Kepala Ongoing Update + pil filter Semua/Anime/Donghua. */
+    /** Kepala Ongoing Update + pil filter + tautan Jadwal. */
     static class OngoingHeadVH extends RecyclerView.ViewHolder {
         private final Chip fAll, fAnime, fDonghua;
+        private final TextView schedule;
         OngoingHeadVH(@NonNull View v) {
             super(v);
             fAll = v.findViewById(R.id.uiFilterAll);
             fAnime = v.findViewById(R.id.uiFilterAnime);
             fDonghua = v.findViewById(R.id.uiFilterDonghua);
+            schedule = v.findViewById(R.id.uiSchedule);
         }
-        void bind(String filter, final OnFilterPick pick) {
+        void bind(String filter, final OnFilterPick pick,
+                  final OnSectionClick section) {
             fAll.setChecked(FILTER_ALL.equals(filter));
             fAnime.setChecked(FILTER_ANIME.equals(filter));
             fDonghua.setChecked(FILTER_DONGHUA.equals(filter));
@@ -344,6 +454,29 @@ public class HomeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                     pick != null ? v -> pick.onFilter(FILTER_ANIME) : null);
             fDonghua.setOnClickListener(
                     pick != null ? v -> pick.onFilter(FILTER_DONGHUA) : null);
+            if (schedule != null) {
+                schedule.setVisibility(section != null ? View.VISIBLE : View.GONE);
+                schedule.setOnClickListener(section != null
+                        ? v -> section.onSection("schedule") : null);
+            }
+        }
+    }
+
+    /** Kartu kaya Rekomendasi (ala AL). */
+    static class RekomVH extends RecyclerView.ViewHolder {
+        final ImageView thumb;
+        final TextView eps, status, date, title, studio, syn;
+        final LinearLayout genres;
+        RekomVH(@NonNull View v) {
+            super(v);
+            thumb = v.findViewById(R.id.rekomThumb);
+            eps = v.findViewById(R.id.rekomEps);
+            status = v.findViewById(R.id.rekomStatus);
+            date = v.findViewById(R.id.rekomDate);
+            title = v.findViewById(R.id.rekomTitle);
+            studio = v.findViewById(R.id.rekomStudio);
+            syn = v.findViewById(R.id.rekomSyn);
+            genres = v.findViewById(R.id.rekomGenres);
         }
     }
 

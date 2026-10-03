@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Pil genre kecil di kartu Rekomendasi. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="#2A2740" />
+    <corners android:radius="99dp" />
+</shape>

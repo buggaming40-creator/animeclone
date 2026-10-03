@@ -66,8 +66,10 @@
     <string name="all_episodes">Semua Episode</string>
     <string name="episode_count_fmt">Episode (%1$d)</string>
     <string name="synopsis_title">Sinopsis</string>
-    <string name="read_more">Lihat Selengkapnya</string>
-    <string name="read_less">Tutup</string>
+    <string name="read_more">Lihat Selengkapnya ∨</string>
+    <string name="read_less">Tutup ∧</string>
+    <string name="save">Simpan</string>
+    <string name="saved">Tersimpan</string>
     <string name="sort_episodes">Urutkan episode</string>
     <string name="sort_newest">Terbaru dulu</string>
     <string name="sort_oldest">Episode 1 dulu</string>
@@ -131,6 +133,10 @@
     <string name="announce_dialog">AnimeClone — nonton anime subtitle Indonesia, bebas iklan, tanpa login.\n\nSumber data: oploverz.ch.\nDibuat oleh nansoffc.</string>
     <string name="ticker_fmt">Sedang tayang: %1$s</string>
     <string name="ok_label">OK</string>
+    <string name="section_rekom">Rekomendasi</string>
+    <string name="schedule_title">Jadwal Rilis</string>
+    <string name="schedule_link">Lihat Jadwal &gt;</string>
+    <string name="no_schedule">Belum ada jadwal rilis</string>
     <string name="ui_banner_desc">Poster unggulan</string>
     <string name="ui_search_desc">Buka pencarian</string>
 

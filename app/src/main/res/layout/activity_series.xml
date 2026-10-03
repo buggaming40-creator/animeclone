@@ -26,8 +26,9 @@
             android:id="@+id/btnBack"
             android:layout_width="44dp"
             android:layout_height="44dp"
-            android:background="@drawable/ui_bg_icon_button"
+            android:background="?attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/back"
+            android:padding="10dp"
             android:src="@drawable/ic_back"
             app:tint="@color/text_primary" />
 
@@ -36,15 +37,22 @@
             android:layout_height="0dp"
             android:layout_weight="1" />
 
-        <!-- Simpan / lepas simpan judul ini -->
-        <ImageButton
+        <!-- Simpan / lepas simpan judul ini (pil ala AL) -->
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnBookmark"
-            android:layout_width="44dp"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="wrap_content"
             android:layout_height="44dp"
-            android:background="@drawable/ui_bg_icon_button"
-            android:contentDescription="@string/bookmark_add"
-            android:src="@drawable/ic_bookmark"
-            app:tint="@color/text_secondary" />
+            android:text="@string/save"
+            android:textAllCaps="false"
+            android:textColor="?attr/colorPrimary"
+            android:textSize="13sp"
+            app:cornerRadius="22dp"
+            app:icon="@drawable/ic_bookmark"
+            app:iconGravity="textStart"
+            app:iconSize="18dp"
+            app:iconTint="?attr/colorPrimary"
+            app:strokeColor="?attr/colorPrimary" />
     </LinearLayout>
 
     <ScrollView
@@ -163,94 +171,85 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
-            <!-- Kartu Lanjutkan Menonton (muncul bila ada riwayat judul ini) -->
-            <com.google.android.material.card.MaterialCardView
+            <!-- Kartu lanjutkan menonton (muncul bila ada riwayat judul ini) -->
+            <LinearLayout
                 android:id="@+id/resumeCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="16dp"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="12dp"
+                android:background="@drawable/bg_card"
                 android:clickable="true"
                 android:focusable="true"
-                android:visibility="gone"
-                app:cardBackgroundColor="@color/card_bg"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="0dp"
-                app:rippleColor="?attr/colorPrimaryContainer"
-                app:strokeColor="@color/border"
-                app:strokeWidth="1dp">
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="12dp"
+                android:visibility="gone">
+
+                <FrameLayout
+                    android:layout_width="52dp"
+                    android:layout_height="72dp"
+                    android:background="@drawable/ui_bg_poster_sm"
+                    android:clipToOutline="true">
+
+                    <ImageView
+                        android:id="@+id/resumeThumb"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:contentDescription="@string/app_name"
+                        android:scaleType="centerCrop" />
+                </FrameLayout>
 
                 <LinearLayout
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:padding="12dp">
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
 
-                    <FrameLayout
-                        android:layout_width="84dp"
-                        android:layout_height="48dp"
-                        android:background="@drawable/ui_bg_poster"
-                        android:clipToOutline="true">
-
-                        <ImageView
-                            android:id="@+id/resumeThumb"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:contentDescription="@string/resume_card_title"
-                            android:scaleType="centerCrop" />
-                    </FrameLayout>
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/resume_card_title"
-                            android:textColor="@color/text_primary"
-                            android:textSize="14sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/resumeLine"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:ellipsize="end"
-                            android:maxLines="1"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="12sp" />
-
-                        <ProgressBar
-                            android:id="@+id/resumeProgress"
-                            style="?android:attr/progressBarStyleHorizontal"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:max="100"
-                            android:progressTint="?attr/colorPrimary" />
-                    </LinearLayout>
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/resumeGo"
+                    <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:text="@string/resume_go"
-                        android:textAllCaps="false"
-                        android:textSize="13sp"
-                        android:textStyle="bold"
-                        app:cornerRadius="99dp" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                        android:text="@string/resume_card_title"
+                        android:textColor="@color/text_primary"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
 
-            <!-- Kepala episode + urut -->
+                    <TextView
+                        android:id="@+id/resumeLine"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="3dp"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+
+                    <ProgressBar
+                        android:id="@+id/resumeProgress"
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:max="100" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/resumeGo"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:background="@drawable/bg_badge"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:paddingHorizontal="14dp"
+                    android:paddingVertical="8dp"
+                    android:text="@string/resume_go"
+                    android:textColor="?attr/colorOnPrimary"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <!-- Kepala episode + urut + ganti tampilan -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -275,17 +274,19 @@
                     android:layout_width="44dp"
                     android:layout_height="44dp"
                     android:layout_marginEnd="8dp"
-                    android:background="@drawable/ui_bg_icon_button"
+                    android:background="@drawable/ui_bg_circle"
                     android:contentDescription="@string/view_toggle"
-                    android:src="@drawable/ic_grid"
+                    android:padding="11dp"
+                    android:src="@drawable/ic_list"
                     app:tint="?attr/colorPrimary" />
 
                 <ImageButton
                     android:id="@+id/btnSort"
                     android:layout_width="44dp"
                     android:layout_height="44dp"
-                    android:background="@drawable/ui_bg_icon_button"
+                    android:background="@drawable/ui_bg_circle"
                     android:contentDescription="@string/sort_episodes"
+                    android:padding="11dp"
                     android:src="@drawable/ic_sort"
                     app:tint="?attr/colorPrimary" />
             </LinearLayout>
@@ -295,6 +296,7 @@
                 android:id="@+id/epRangeRow"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
                 android:clipToPadding="false"
                 android:overScrollMode="never"
                 android:paddingEnd="16dp"
@@ -307,8 +309,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:paddingVertical="8dp" />
+                    android:orientation="horizontal" />
             </HorizontalScrollView>
 
             <androidx.recyclerview.widget.RecyclerView

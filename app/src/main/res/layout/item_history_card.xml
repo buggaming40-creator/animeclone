@@ -46,28 +46,32 @@
             android:contentDescription="@string/resume"
             android:src="@drawable/ic_play"
             app:tint="#FFFFFF" />
+
+        <!-- Waktu + progres di atas thumb (ala AL) -->
+        <TextView
+            android:id="@+id/cardTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="6dp"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <ProgressBar
+            android:id="@+id/cardProgress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="3dp"
+            android:layout_gravity="bottom"
+            android:max="100"
+            android:progressBackgroundTint="#40000000"
+            android:progressTint="?attr/colorPrimary"
+            android:visibility="gone" />
     </FrameLayout>
-
-    <ProgressBar
-        android:id="@+id/cardProgress"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="3dp"
-        android:layout_marginTop="6dp"
-        android:max="100"
-        android:progressTint="?attr/colorPrimary"
-        android:visibility="gone" />
-
-    <TextView
-        android:id="@+id/cardTime"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:textColor="@color/text_secondary"
-        android:textSize="11sp"
-        android:visibility="gone" />
 
     <TextView
         android:id="@+id/cardTitle"

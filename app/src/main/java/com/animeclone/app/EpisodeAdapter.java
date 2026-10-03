@@ -56,7 +56,7 @@ public class EpisodeAdapter extends RecyclerView.Adapter<EpisodeAdapter.VH> {
         h.num.setText(num);
         if (h.title != null) h.title.setText(it.title);
         if (h.date != null) {
-            h.date.setText(it.date);
+        h.date.setText(Utils.relDate(it.date));
             // Sel grid: tanggal mungil hanya bila ada datanya.
             if (h.title == null) {
                 h.date.setVisibility(it.date == null || it.date.isEmpty()

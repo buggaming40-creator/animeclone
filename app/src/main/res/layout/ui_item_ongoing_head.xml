@@ -75,4 +75,19 @@
             app:chipStrokeWidth="1dp"
             app:ensureMinTouchTargetSize="false" />
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/uiSchedule"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="end"
+        android:paddingVertical="6dp"
+        android:text="@string/schedule_link"
+        android:textColor="?attr/colorPrimary"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
 </LinearLayout>

@@ -14,9 +14,9 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.media3.common.MediaItem;
 import androidx.media3.common.Player;
@@ -51,10 +51,9 @@ public class PlayerActivity extends AppCompatActivity {
 
     private WebView web;
     private PlayerView playerView;
-    private View overlay, topbar, sideRail, btnPrev, btnNext;
+    private View overlay, topbar, sideRail, btnPrev, btnNext, btnEps, btnDownload;
     private TextView status, titleBar, subtitleBar, modeBadge, epCounter, qualityBadge;
     private TextView btnSpeed, btnServer;
-    private View btnEps;
     /** Rel episode siap (lebih dari 1 episode) — tampil hanya saat kontrol terlihat. */
     private boolean railReady;
 
@@ -167,6 +166,8 @@ public class PlayerActivity extends AppCompatActivity {
         }
         if (btnEps != null) btnEps.setOnClickListener(v -> showEpisodePicker());
         if (btnServer != null) btnServer.setOnClickListener(v -> switchServer());
+        btnDownload = findViewById(R.id.btnDownload);
+        if (btnDownload != null) btnDownload.setOnClickListener(v -> downloadCurrent());
 
         // Preferensi pemutar: aspect ratio & label kualitas (Setelan → Player).
         applyRatio();
@@ -647,6 +648,37 @@ public class PlayerActivity extends AppCompatActivity {
         tick.postDelayed(fallbackRun, 12000);
     }
 
+    /** Unduh episode ini via tautan GoFile situs (dibuka di peramban). */
+    private void downloadCurrent() {
+        if (epUrl == null || epUrl.isEmpty() || isFinishing() || isDestroyed()) return;
+        Toast.makeText(this, R.string.loading, Toast.LENGTH_SHORT).show();
+        Async.go(() -> Oploverz.loadEpisode(epUrl),
+                new Async.Done<Oploverz.Episode>() {
+                    @Override public void ok(Oploverz.Episode ep) {
+                        if (isFinishing() || isDestroyed()) return;
+                        if (ep != null && !ep.downloadUrl.isEmpty()) {
+                            try {
+                                startActivity(new android.content.Intent(
+                                        android.content.Intent.ACTION_VIEW,
+                                        android.net.Uri.parse(ep.downloadUrl)));
+                            } catch (Throwable t) {
+                                Toast.makeText(PlayerActivity.this,
+                                        R.string.err_net, Toast.LENGTH_SHORT).show();
+                            }
+                        } else {
+                            Toast.makeText(PlayerActivity.this,
+                                    R.string.no_download, Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override public void err(Throwable t) {
+                        if (isFinishing() || isDestroyed()) return;
+                        Toast.makeText(PlayerActivity.this,
+                                R.string.err_net, Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
+
     /** Daftar episode ala AL: pilih = pindah episode. */
     private void showEpisodePicker() {
         if (epUrls.isEmpty()) return;
@@ -655,7 +687,7 @@ public class PlayerActivity extends AppCompatActivity {
             String t = epTitles.get(i);
             names[i] = (t == null || t.isEmpty()) ? ("Episode " + (i + 1)) : t;
         }
-        new AlertDialog.Builder(this)
+        new com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.episode_list)
                 .setItems(names, (d, which) -> gotoEpisode(which))
                 .setNegativeButton(R.string.cancel, null)
@@ -726,6 +758,47 @@ public class PlayerActivity extends AppCompatActivity {
         persist();
     }
 
+    /**
+     * Keluar player (Home / pindah app) selagi video berputar → masuk
+     * mini-player PiP bila setelan menyala. Mode web tidak ikut (tanpa Exo).
+     */
+    @Override
+    protected void onUserLeaveHint() {
+        super.onUserLeaveHint();
+        try {
+            if (Prefs.playerPip(this) && exoStarted && player != null
+                    && player.isPlaying()) {
+                enterPictureInPictureMode(new PictureInPictureParams.Builder()
+                        .setAspectRatio(new Rational(16, 9))
+                        .build());
+            }
+        } catch (Throwable ignored) {
+            // Perangkat tanpa PiP — tetap di player biasa.
+        }
+    }
+
+    /**
+     * Mode PiP: sembunyikan bilah atas + rel + lencana dan kunci kontrol;
+     * keluar PiP = kembalikan semuanya seperti semula.
+     */
+    @Override
+    public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode,
+                                              Configuration newConfig) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig);
+        if (isInPictureInPictureMode) {
+            if (topbar != null) topbar.setVisibility(View.GONE);
+            if (sideRail != null) sideRail.setVisibility(View.GONE);
+            if (modeBadge != null) modeBadge.setVisibility(View.GONE);
+            if (qualityBadge != null) qualityBadge.setVisibility(View.GONE);
+            if (playerView != null) playerView.setUseController(false);
+        } else {
+            if (playerView != null) playerView.setUseController(true);
+            if (topbar != null) topbar.setVisibility(View.VISIBLE);
+            updateRail();
+            syncQualityLabel();
+        }
+    }
+
     @Override
     protected void onStart() {
         super.onStart();
@@ -755,43 +828,6 @@ public class PlayerActivity extends AppCompatActivity {
             if (d > 0 && d != androidx.media3.common.C.TIME_UNSET) current.durMs = d;
         }
         current.watchedAt = System.currentTimeMillis();
-    }
-
-    // ------------------------------------------------- mini-player (PiP)
-
-    /**
-     * Keluar player saat video berputar → mini-player PiP 16:9
-     * (bisa dimatikan di Setelan → Player).
-     */
-    @Override
-    protected void onUserLeaveHint() {
-        if (Prefs.playerPip(this) && exoStarted && player != null && player.isPlaying()) {
-            try {
-                enterPictureInPictureMode(new PictureInPictureParams.Builder()
-                        .setAspectRatio(new Rational(16, 9))
-                        .build());
-            } catch (Throwable ignored) {
-                // Perangkat tanpa dukungan PiP — tetap keluar seperti biasa.
-            }
-        }
-        super.onUserLeaveHint();
-    }
-
-    @Override
-    public void onPictureInPictureModeChanged(boolean isInPip, Configuration newConfig) {
-        super.onPictureInPictureModeChanged(isInPip, newConfig);
-        if (isInPip) {
-            if (topbar != null) topbar.setVisibility(View.GONE);
-            if (sideRail != null) sideRail.setVisibility(View.GONE);
-            if (modeBadge != null) modeBadge.setVisibility(View.GONE);
-            if (qualityBadge != null) qualityBadge.setVisibility(View.GONE);
-            if (playerView != null) playerView.setUseController(false);
-        } else {
-            if (playerView != null) playerView.setUseController(true);
-            if (topbar != null && exoStarted) topbar.setVisibility(View.VISIBLE);
-            updateRail();
-            syncQualityLabel();
-        }
     }
 
     private void releasePlayer() {
