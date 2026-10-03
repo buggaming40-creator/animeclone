@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Kepala seksi Ongoing Update ala AL: judul + pil filter Semua/Anime/Donghua. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingEnd="12dp"
+    android:paddingStart="8dp"
+    android:paddingTop="14dp"
+    android:paddingBottom="8dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/section_ongoing"
+        android:textColor="@color/text_primary"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/uiFilterAll"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checkable="true"
+            android:minHeight="0dp"
+            android:text="@string/ui_filter_all"
+            android:textColor="@color/ui_chip_text"
+            android:textSize="12sp"
+            app:chipBackgroundColor="@color/ui_chip_fill"
+            app:chipCornerRadius="99dp"
+            app:chipMinHeight="34dp"
+            app:chipStrokeColor="@color/ui_chip_stroke"
+            app:chipStrokeWidth="1dp"
+            app:ensureMinTouchTargetSize="false" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/uiFilterAnime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:checkable="true"
+            android:minHeight="0dp"
+            android:text="@string/ui_filter_anime"
+            android:textColor="@color/ui_chip_text"
+            android:textSize="12sp"
+            app:chipBackgroundColor="@color/ui_chip_fill"
+            app:chipCornerRadius="99dp"
+            app:chipMinHeight="34dp"
+            app:chipStrokeColor="@color/ui_chip_stroke"
+            app:chipStrokeWidth="1dp"
+            app:ensureMinTouchTargetSize="false" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/uiFilterDonghua"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:checkable="true"
+            android:minHeight="0dp"
+            android:text="@string/ui_filter_donghua"
+            android:textColor="@color/ui_chip_text"
+            android:textSize="12sp"
+            app:chipBackgroundColor="@color/ui_chip_fill"
+            app:chipCornerRadius="99dp"
+            app:chipMinHeight="34dp"
+            app:chipStrokeColor="@color/ui_chip_stroke"
+            app:chipStrokeWidth="1dp"
+            app:ensureMinTouchTargetSize="false" />
+    </LinearLayout>
+</LinearLayout>
