@@ -21,7 +21,8 @@ mengambang). Tanpa login, tanpa VIP/EXP/chat/komentar. Dibuat oleh
   Lanjutkan Menonton, grid/list + urut + rentang episode, Putar
   Sekarang / Unduh (GoFile).
 - **Player** — kecepatan, daftar episode, ganti server, prev/next, info 2 baris,
-  kontrol ala YouTube, mini-player PiP.
+  kontrol ala YouTube, mini-player PiP; mode tonton potret
+  (video + info + aksi + daftar episode) + lanskap penuh.
 - **Setelan** — header profil tamu + tema, 8 warna aksen (bawaan periwinkle),
   preferensi player, penyimpanan, tentang.
 

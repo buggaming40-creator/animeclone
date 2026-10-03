@@ -200,4 +200,5 @@
     <!-- Mini-player PiP -->
     <string name="pip_title">Mini-player (PiP)</string>
     <string name="pip_hint">Jendela kecil saat keluar player ketika video berputar</string>
+    <string name="fullscreen">Layar penuh</string>
 </resources>
