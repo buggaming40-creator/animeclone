@@ -15,12 +15,13 @@ mengambang). Tanpa login, tanpa VIP/EXP/chat/komentar. Dibuat oleh
   (ketuk = cari), kartu pengumuman, ticker sedang tayang, banner auto-scroll,
   seksi Riwayat (kartu 16:9 + tombol play + resume), Genre Pilihan warna-warni,
   Ongoing Update + pil filter Semua/Anime/Donghua, grid Rilis Terbaru.
-- **Cari / Tersimpan / Riwayat** — sama seperti NsNime (bookmark + lencana
-  episode baru, progress menit, resume).
-- **Detail anime** — poster tengah, meta, chip genre, sinopsis, urut episode,
-  Putar Sekarang / Unduh (GoFile).
+- **Cari / Tersimpan / Riwayat** — sama seperti NsNime (live search +
+  genre, bookmark + kategori + lencana episode baru, progress menit, resume).
+- **Detail anime** — poster tengah, meta, chip genre, sinopsis, kartu
+  Lanjutkan Menonton, grid/list + urut + rentang episode, Putar
+  Sekarang / Unduh (GoFile).
 - **Player** — kecepatan, daftar episode, ganti server, prev/next, info 2 baris,
-  kontrol ala YouTube.
+  kontrol ala YouTube, mini-player PiP.
 - **Setelan** — header profil tamu + tema, 8 warna aksen (bawaan periwinkle),
   preferensi player, penyimpanan, tentang.
 
