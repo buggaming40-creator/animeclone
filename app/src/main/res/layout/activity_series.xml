@@ -163,6 +163,93 @@
                     android:textStyle="bold" />
             </LinearLayout>
 
+            <!-- Kartu Lanjutkan Menonton (muncul bila ada riwayat judul ini) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/resumeCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="12dp"
+                android:clickable="true"
+                android:focusable="true"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/card_bg"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="0dp"
+                app:rippleColor="?attr/colorPrimaryContainer"
+                app:strokeColor="@color/border"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="12dp">
+
+                    <FrameLayout
+                        android:layout_width="84dp"
+                        android:layout_height="48dp"
+                        android:background="@drawable/ui_bg_poster"
+                        android:clipToOutline="true">
+
+                        <ImageView
+                            android:id="@+id/resumeThumb"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:contentDescription="@string/resume_card_title"
+                            android:scaleType="centerCrop" />
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/resume_card_title"
+                            android:textColor="@color/text_primary"
+                            android:textSize="14sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/resumeLine"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:ellipsize="end"
+                            android:maxLines="1"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+
+                        <ProgressBar
+                            android:id="@+id/resumeProgress"
+                            style="?android:attr/progressBarStyleHorizontal"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:max="100"
+                            android:progressTint="?attr/colorPrimary" />
+                    </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/resumeGo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:text="@string/resume_go"
+                        android:textAllCaps="false"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="99dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
             <!-- Kepala episode + urut -->
             <LinearLayout
                 android:layout_width="match_parent"
@@ -184,6 +271,16 @@
                     android:textStyle="bold" />
 
                 <ImageButton
+                    android:id="@+id/btnView"
+                    android:layout_width="44dp"
+                    android:layout_height="44dp"
+                    android:layout_marginEnd="8dp"
+                    android:background="@drawable/ui_bg_icon_button"
+                    android:contentDescription="@string/view_toggle"
+                    android:src="@drawable/ic_grid"
+                    app:tint="?attr/colorPrimary" />
+
+                <ImageButton
                     android:id="@+id/btnSort"
                     android:layout_width="44dp"
                     android:layout_height="44dp"
@@ -192,6 +289,27 @@
                     android:src="@drawable/ic_sort"
                     app:tint="?attr/colorPrimary" />
             </LinearLayout>
+
+            <!-- Chip rentang episode (dibangun dari kode; hanya seri panjang) -->
+            <HorizontalScrollView
+                android:id="@+id/epRangeRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:clipToPadding="false"
+                android:overScrollMode="never"
+                android:paddingEnd="16dp"
+                android:paddingStart="16dp"
+                android:scrollbars="none"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:id="@+id/epRangeList"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingVertical="8dp" />
+            </HorizontalScrollView>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recycler"

@@ -228,7 +228,7 @@ public class HomeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
 
         if (row.type == TYPE_GENRE) {
-            ((GenreVH) holder).bind(genrePick);
+            ((GenreVH) holder).bind(genrePick, sectionClick);
             return;
         }
 
@@ -294,9 +294,10 @@ public class HomeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
     }
 
-    /** Deretan pil genre warna-warni (statis, ala AL). */
+    /** Deretan pil genre warna-warni (statis, ala AL) + "Semua genre >". */
     static class GenreVH extends RecyclerView.ViewHolder {
         private final MaterialButton[] btns = new MaterialButton[6];
+        private final TextView all;
         GenreVH(@NonNull View v) {
             super(v);
             btns[0] = v.findViewById(R.id.uiGenre0);
@@ -305,8 +306,9 @@ public class HomeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             btns[3] = v.findViewById(R.id.uiGenre3);
             btns[4] = v.findViewById(R.id.uiGenre4);
             btns[5] = v.findViewById(R.id.uiGenre5);
+            all = v.findViewById(R.id.uiGenreAll);
         }
-        void bind(final OnGenrePick pick) {
+        void bind(final OnGenrePick pick, final OnSectionClick section) {
             for (int i = 0; i < 6; i++) {
                 btns[i].setText(GENRES[i]);
                 btns[i].setBackgroundColor(
@@ -314,6 +316,12 @@ public class HomeAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
                 final String g = GENRES[i];
                 btns[i].setOnClickListener(
                         pick != null ? v -> pick.onGenre(g) : null);
+            }
+            // Hint "Semua genre >" membuka indeks genre lewat sectionClick "genres".
+            if (all != null) {
+                all.setOnClickListener(section != null
+                        ? v -> section.onSection("genres") : null);
+                all.setClickable(section != null);
             }
         }
     }

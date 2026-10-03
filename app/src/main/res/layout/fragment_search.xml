@@ -146,6 +146,19 @@
         android:layout_marginTop="10dp"
         android:background="@color/border" />
 
+    <!-- Jumlah hasil (live search) -->
+    <TextView
+        android:id="@+id/searchCount"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingEnd="16dp"
+        android:paddingStart="16dp"
+        android:paddingTop="10dp"
+        android:textColor="?attr/colorPrimary"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
     <!-- Hasil -->
     <FrameLayout
         android:layout_width="match_parent"

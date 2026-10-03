@@ -167,4 +167,31 @@
 
     <!-- Label preferensi kualitas di layar pemutar -->
     <string name="quality_badge">%1$s · preferensi</string>
+
+    <!-- Lanjutkan Menonton di detail -->
+    <string name="resume_card_title">Lanjutkan Menonton</string>
+    <string name="resume_line_fmt">Episode %1$s • %2$s / %3$s</string>
+    <string name="resume_go">Lanjut</string>
+
+    <!-- Tampilan episode grid/daftar + rentang -->
+    <string name="view_toggle">Tampilan grid/daftar</string>
+    <string name="range_all">Semua</string>
+
+    <!-- Live search -->
+    <string name="search_count_fmt">%1$d hasil untuk \'%2$s\'</string>
+
+    <!-- Indeks genre -->
+    <string name="genre_all">Semua genre &gt;</string>
+    <string name="genre_index_title">Semua Genre</string>
+
+    <!-- Kategori bookmark -->
+    <string name="save_to_title">Simpan ke</string>
+    <string name="save_label">Simpan</string>
+    <string name="new_category">+ Kategori baru</string>
+    <string name="new_category_hint">Nama kategori</string>
+    <string name="cat_all">Semua</string>
+
+    <!-- Mini-player PiP -->
+    <string name="pip_title">Mini-player (PiP)</string>
+    <string name="pip_hint">Jendela kecil saat keluar player ketika video berputar</string>
 </resources>

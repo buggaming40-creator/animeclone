@@ -14,7 +14,7 @@ import com.google.android.material.card.MaterialCardView;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Adapter grid tab Tersimpan: sampul, judul, status, lencana episode baru. */
+/** Adapter grid tab Tersimpan: sampul, judul, status, kategori, lencana episode baru. */
 public class BookmarkAdapter extends RecyclerView.Adapter<BookmarkAdapter.VH> {
 
     public interface OnClick {
@@ -22,10 +22,16 @@ public class BookmarkAdapter extends RecyclerView.Adapter<BookmarkAdapter.VH> {
         void onDelete(BookmarkItem item);
     }
 
+    /** Penerjemah id kategori → nama tampilan (diisi BookmarkFragment). */
+    public interface CatLookup { String nameOf(long catId); }
+
     private final List<BookmarkItem> data = new ArrayList<>();
     private final OnClick click;
+    private CatLookup lookup;
 
     public BookmarkAdapter(OnClick click) { this.click = click; }
+
+    public void setCatLookup(CatLookup l) { lookup = l; }
 
     public void submit(List<BookmarkItem> items) {
         data.clear();
@@ -44,6 +50,14 @@ public class BookmarkAdapter extends RecyclerView.Adapter<BookmarkAdapter.VH> {
         h.title.setText(it.title);
         h.status.setText(it.status);
         h.status.setVisibility(it.status.isEmpty() ? View.GONE : View.VISIBLE);
+        // Subjudul kategori (kecil, sekunder) — sembunyi bila tanpa kategori.
+        String cn = lookup == null ? null : lookup.nameOf(it.catId);
+        if (it.catId <= 0 || cn == null || cn.isEmpty()) {
+            h.cat.setVisibility(View.GONE);
+        } else {
+            h.cat.setText(cn);
+            h.cat.setVisibility(View.VISIBLE);
+        }
         // Lencana hanya bila jumlah episode situs melebihi yang sudah dilihat.
         h.newEp.setVisibility(it.hasNewEpisode() ? View.VISIBLE : View.GONE);
         ImageLoader.load(it.thumb, h.thumb);
@@ -56,13 +70,14 @@ public class BookmarkAdapter extends RecyclerView.Adapter<BookmarkAdapter.VH> {
 
     static class VH extends RecyclerView.ViewHolder {
         final ImageView thumb;
-        final TextView title, status, newEp;
+        final TextView title, status, cat, newEp;
         final View btnDelete;
         VH(@NonNull View v) {
             super(v);
             thumb = v.findViewById(R.id.thumb);
             title = v.findViewById(R.id.title);
             status = v.findViewById(R.id.status);
+            cat = v.findViewById(R.id.uiCat);
             newEp = v.findViewById(R.id.uiNewEp);
             btnDelete = v.findViewById(R.id.uiDelete);
         }

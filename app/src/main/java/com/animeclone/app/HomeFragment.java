@@ -49,6 +49,13 @@ public class HomeFragment extends Fragment {
     private static final String[] QUICK_GENRES = {
             "Action", "Adventure", "Comedy", "Romance", "Fantasy"};
 
+    /** Indeks genre lengkap untuk dialog "Semua genre" (netral, 16 entri). */
+    private static final String[] GENRE_INDEX = {
+            "Action", "Adventure", "Avant Garde", "Award Winning",
+            "Comedy", "Drama", "Fantasy", "Horror",
+            "Mystery", "Romance", "Shoujo", "Shounen",
+            "Slice of Life", "Sports", "Supernatural", "Suspense"};
+
     private HomeAdapter adapter;
     private BannerAdapter bannerAdapter;
     private SwipeRefreshLayout refresh;
@@ -105,6 +112,7 @@ public class HomeFragment extends Fragment {
         adapter.setOnHistoryPick(this::playHistory);
         adapter.setOnSectionClick(key -> {
             if ("history".equals(key)) gotoTab(PagerAdapter.PAGE_HISTORY);
+            else if ("genres".equals(key)) showGenreIndex();
         });
         adapter.setOnGenrePick(this::searchGenre);
         adapter.setOnFilterPick(this::applyFilter);
@@ -233,6 +241,16 @@ public class HomeFragment extends Fragment {
         if (getContext() == null) return;
         SearchFragment.requestQuery(genre);
         gotoTab(PagerAdapter.PAGE_SEARCH);
+    }
+
+    /** Indeks genre: daftar netral — ketuk = cari genre tersebut. */
+    private void showGenreIndex() {
+        if (getContext() == null) return;
+        new AlertDialog.Builder(requireContext())
+                .setTitle(R.string.genre_index_title)
+                .setItems(GENRE_INDEX, (d, which) -> searchGenre(GENRE_INDEX[which]))
+                .setNegativeButton(R.string.cancel, null)
+                .show();
     }
 
     // ------------------------------------------------------------- muat data

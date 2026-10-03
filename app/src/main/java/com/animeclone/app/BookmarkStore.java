@@ -12,12 +12,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Penyimpanan bookmark (Tersimpan): SQLite `bookmark.db`, VER 1.
+ * Penyimpanan bookmark (Tersimpan): SQLite `bookmark.db`, VER 2.
  *
  * Skema (animelovers.md §3.3):
  *   bookmark(id INTEGER PK, series_url TEXT UNIQUE, title TEXT, thumb TEXT,
  *            status TEXT DEFAULT '', last_seen_ep INTEGER DEFAULT 0,
+ *            cat_id INTEGER DEFAULT 0,
  *            added_at INTEGER, updated_at INTEGER);  -- idx updated_at DESC
+ *   cat(id INTEGER PK, name TEXT UNIQUE)  -- kategori buatan pengguna
  *
  * Alur "Ada Episode Baru!":
  *   - Saat Series membuka sebuah judul, jumlah episode situs (asli, dari
@@ -32,8 +34,17 @@ import java.util.regex.Pattern;
 public class BookmarkStore extends SQLiteOpenHelper {
 
     private static final String DB = "bookmark.db";
-    private static final int VER = 1;
+    private static final int VER = 2;
     private static final String TABLE = "bookmark";
+
+    /** Satu kategori bookmark (baris tabel `cat`); id 0 = virtual "Semua". */
+    public static class Cat {
+        public long id;
+        public String name = "";
+    }
+
+    /** Panjang maksimum nama kategori buatan pengguna. */
+    private static final int MAX_CAT_LEN = 20;
 
     /** Urutan pengurutan daftar bookmark. */
     public static final int SORT_ALPHA = 0;     // title COLLATE NOCASE
@@ -48,22 +59,124 @@ public class BookmarkStore extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL("CREATE TABLE bookmark ("
+        db.execSQL("CREATE TABLE IF NOT EXISTS bookmark ("
                 + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
                 + "series_url TEXT NOT NULL UNIQUE,"
                 + "title TEXT NOT NULL DEFAULT '',"
                 + "thumb TEXT NOT NULL DEFAULT '',"
                 + "status TEXT NOT NULL DEFAULT '',"
                 + "last_seen_ep INTEGER NOT NULL DEFAULT 0,"
+                + "cat_id INTEGER NOT NULL DEFAULT 0,"
                 + "added_at INTEGER NOT NULL DEFAULT 0,"
                 + "updated_at INTEGER NOT NULL DEFAULT 0)");
-        db.execSQL("CREATE INDEX idx_bookmark_updated ON bookmark(updated_at DESC)");
+        db.execSQL("CREATE INDEX IF NOT EXISTS idx_bookmark_updated "
+                + "ON bookmark(updated_at DESC)");
+        ensureCats(db);
     }
 
+    /**
+     * Migrasi VER 1 → 2: tabel bookmark TIDAK di-drop (data pengguna aman,
+     * riwayat di history.db tidak tersentuh) — hanya tambah tabel `cat`,
+     * kolom `cat_id`, dan seed 3 kategori bawaan.
+     */
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldV, int newV) {
-        db.execSQL("DROP TABLE IF EXISTS " + TABLE);
-        onCreate(db);
+        if (oldV < 2) {
+            db.execSQL("CREATE TABLE IF NOT EXISTS cat("
+                    + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    + "name TEXT UNIQUE)");
+            try {
+                db.execSQL("ALTER TABLE bookmark "
+                        + "ADD COLUMN cat_id INTEGER NOT NULL DEFAULT 0");
+            } catch (Throwable ignored) {
+                // Kolom sudah ada (migrasi berjalan dua kali) — lanjutkan.
+            }
+            db.execSQL("INSERT OR IGNORE INTO cat(name) VALUES ('Favorit')");
+            db.execSQL("INSERT OR IGNORE INTO cat(name) VALUES ('Mau Nonton')");
+            db.execSQL("INSERT OR IGNORE INTO cat(name) VALUES ('Arsip')");
+        }
+    }
+
+    /** Buat tabel `cat` + seed bawaan (dipakai instalasi baru). */
+    private void ensureCats(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS cat("
+                + "id INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + "name TEXT UNIQUE)");
+        db.execSQL("INSERT OR IGNORE INTO cat(name) VALUES ('Favorit')");
+        db.execSQL("INSERT OR IGNORE INTO cat(name) VALUES ('Mau Nonton')");
+        db.execSQL("INSERT OR IGNORE INTO cat(name) VALUES ('Arsip')");
+    }
+
+    // -------------------------------------------------------------- kategori
+
+    /**
+     * Daftar kategori: baris pertama selalu virtual id 0 = "Semua",
+     * sisanya kategori dari tabel `cat` urut nama.
+     */
+    public List<Cat> cats() {
+        List<Cat> out = new ArrayList<>();
+        Cat semua = new Cat();
+        semua.id = 0;
+        semua.name = "Semua";
+        out.add(semua);
+        SQLiteDatabase db = getReadableDatabase();
+        Cursor c = db.rawQuery("SELECT id,name FROM cat ORDER BY name COLLATE NOCASE ASC", null);
+        try {
+            while (c.moveToNext()) {
+                Cat k = new Cat();
+                k.id = c.getLong(0);
+                k.name = c.getString(1) == null ? "" : c.getString(1);
+                out.add(k);
+            }
+        } finally {
+            c.close();
+        }
+        return out;
+    }
+
+    /**
+     * Tambah kategori; nama dipangkas (maks 20 karakter), kosong/duplikat
+     * diabaikan. Kembalikan id baris (yang sudah ada bila duplikat),
+     * atau -1 bila nama kosong.
+     */
+    public long addCat(String name) {
+        String n = name == null ? "" : name.trim();
+        if (n.isEmpty()) return -1;
+        if (n.length() > MAX_CAT_LEN) n = n.substring(0, MAX_CAT_LEN).trim();
+        if (n.isEmpty()) return -1;
+        SQLiteDatabase db = getWritableDatabase();
+        db.execSQL("INSERT OR IGNORE INTO cat(name) VALUES (?)", new Object[]{n});
+        Cursor c = db.rawQuery("SELECT id FROM cat WHERE name=?", new String[]{n});
+        try {
+            return c.moveToFirst() ? c.getLong(0) : -1;
+        } finally {
+            c.close();
+        }
+    }
+
+    /** Pindahkan bookmark ke kategori lain. */
+    public void setCat(String url, long catId) {
+        if (url == null || url.isEmpty()) return;
+        ContentValues v = new ContentValues();
+        v.put("cat_id", Math.max(0, catId));
+        v.put("updated_at", System.currentTimeMillis());
+        getWritableDatabase().update(TABLE, v, "series_url=?", new String[]{url});
+    }
+
+    /** Nama kategori; id 0/tidak dikenal = "Semua". */
+    public String catName(long id) {
+        if (id <= 0) return "Semua";
+        Cursor c = getReadableDatabase().rawQuery(
+                "SELECT name FROM cat WHERE id=?", new String[]{String.valueOf(id)});
+        try {
+            if (c.moveToFirst()) {
+                String n = c.getString(0);
+                return n == null ? "" : n;
+            }
+        } finally {
+            c.close();
+        }
+        return "";
     }
 
     // ------------------------------------------------------------------ tulis
@@ -74,6 +187,16 @@ public class BookmarkStore extends SQLiteOpenHelper {
      * sehingga tidak ada lencana palsu tepat setelah menyimpan.
      */
     public void add(String url, String title, String thumb, String status, int siteEp) {
+        save(url, title, thumb, status, siteEp, 0);
+    }
+
+    /**
+     * Simpan judul ke kategori tertentu (dipakai sheet "Simpan ke").
+     * Perilaku lencana sama seperti {@link #add}: `last_seen_ep` diisi
+     * jumlah episode situs saat ini agar tidak muncul lencana palsu.
+     */
+    public void save(String url, String title, String thumb,
+                     String status, int siteEp, long catId) {
         if (url == null || url.isEmpty()) return;
         long now = System.currentTimeMillis();
         SQLiteDatabase db = getWritableDatabase();
@@ -90,6 +213,7 @@ public class BookmarkStore extends SQLiteOpenHelper {
         v.put("thumb", nz(thumb));
         v.put("status", nz(status));
         v.put("last_seen_ep", Math.max(0, siteEp));
+        v.put("cat_id", Math.max(0, catId));
         v.put("added_at", now);
         v.put("updated_at", now);
         db.insertWithOnConflict(TABLE, null, v, SQLiteDatabase.CONFLICT_REPLACE);
@@ -153,7 +277,7 @@ public class BookmarkStore extends SQLiteOpenHelper {
         if (url == null || url.isEmpty()) return null;
         SQLiteDatabase db = getReadableDatabase();
         Cursor c = db.rawQuery(
-                "SELECT id,series_url,title,thumb,status,last_seen_ep,added_at,updated_at "
+                "SELECT id,series_url,title,thumb,status,last_seen_ep,cat_id,added_at,updated_at "
               + "FROM bookmark WHERE series_url=?", new String[]{url});
         try {
             return c.moveToFirst() ? read(c) : null;
@@ -175,7 +299,7 @@ public class BookmarkStore extends SQLiteOpenHelper {
         List<BookmarkItem> out = new ArrayList<>();
         SQLiteDatabase db = getReadableDatabase();
         Cursor c = db.rawQuery(
-                "SELECT id,series_url,title,thumb,status,last_seen_ep,added_at,updated_at "
+                "SELECT id,series_url,title,thumb,status,last_seen_ep,cat_id,added_at,updated_at "
               + "FROM bookmark ORDER BY " + order, null);
         try {
             while (c.moveToNext()) out.add(read(c));
@@ -202,8 +326,10 @@ public class BookmarkStore extends SQLiteOpenHelper {
         b.thumb = c.getString(3);
         b.status = c.getString(4);
         b.lastSeenEp = c.getInt(5);
-        b.addedAt = c.getLong(6);
-        b.updatedAt = c.getLong(7);
+        int ci = c.getColumnIndex("cat_id");
+        b.catId = ci >= 0 ? c.getLong(ci) : 0;
+        b.addedAt = c.getLong(ci >= 0 ? 7 : 6);
+        b.updatedAt = c.getLong(ci >= 0 ? 8 : 7);
         b.siteEp = parseCount(b.status);
         return b;
     }

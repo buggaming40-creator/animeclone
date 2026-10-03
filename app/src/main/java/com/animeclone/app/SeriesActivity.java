@@ -1,9 +1,12 @@
 package com.animeclone.app;
 
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.InputFilter;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -13,8 +16,11 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.chip.Chip;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,11 +39,12 @@ public class SeriesActivity extends AppCompatActivity {
 
     private String title = "", thumb = "", seriesUrl = "", statusText = "", pageUrl = "";
     private EpisodeAdapter adapter;
+    private RecyclerView rv;
     private ProgressBar progress;
     private TextView empty, metaLine, synopsis, synToggle, epCount;
     private LinearLayout genreRow;
     private View synCard;
-    private ImageButton btnSort;
+    private ImageButton btnSort, btnView;
     private HistoryStore store;
     private BookmarkStore bookmarks;
     private ImageButton btnBookmark;
@@ -45,8 +52,27 @@ public class SeriesActivity extends AppCompatActivity {
     /** false = terbaru dulu (bawaan situs); true = episode 1 dulu. */
     private boolean asc;
 
+    /** Mode tampilan episode: daftar atau grid. */
+    private boolean gridMode;
+
     /** Daftar episode hasil pemuatan — selalu dalam urutan tampil. */
     private final List<EpisodeItem> episodes = new ArrayList<>();
+
+    /** Tampilan aktual setelah saring rentang (sumber adapter + rail player). */
+    private final List<EpisodeItem> displayed = new ArrayList<>();
+
+    /** Rentang nomor episode ([lo,hi] tiap baris); rangeIdx -1 = semua. */
+    private final List<int[]> ranges = new ArrayList<>();
+    private int rangeIdx = -1;
+    private View epRangeRow;
+    private LinearLayout epRangeList;
+
+    // Kartu Lanjutkan Menonton.
+    private View resumeCard;
+    private ImageView resumeThumb;
+    private TextView resumeLine;
+    private ProgressBar resumeProgress;
+    private HistoryItem resumeItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,6 +99,13 @@ public class SeriesActivity extends AppCompatActivity {
         synToggle = findViewById(R.id.synToggle);
         epCount = findViewById(R.id.epCount);
         btnSort = findViewById(R.id.btnSort);
+        btnView = findViewById(R.id.btnView);
+        epRangeRow = findViewById(R.id.epRangeRow);
+        epRangeList = findViewById(R.id.epRangeList);
+        resumeCard = findViewById(R.id.resumeCard);
+        resumeThumb = findViewById(R.id.resumeThumb);
+        resumeLine = findViewById(R.id.resumeLine);
+        resumeProgress = findViewById(R.id.resumeProgress);
 
         store = new HistoryStore(this);
         bookmarks = new BookmarkStore(this);
@@ -94,6 +127,21 @@ public class SeriesActivity extends AppCompatActivity {
         });
         syncSortButton();
 
+        // Alih tampilan daftar/grid episode.
+        if (btnView != null) {
+            btnView.setOnClickListener(v -> {
+                gridMode = !gridMode;
+                adapter.setGrid(gridMode);
+                rv.setLayoutManager(gridMode ? gridLayout()
+                        : new LinearLayoutManager(this));
+            });
+        }
+
+        // Kartu Lanjutkan Menonton: ketuk = putar seperti membuka episode.
+        if (resumeCard != null) resumeCard.setOnClickListener(v -> playResume());
+        View resumeGo = findViewById(R.id.resumeGo);
+        if (resumeGo != null) resumeGo.setOnClickListener(v -> playResume());
+
         if (synToggle != null) {
             synToggle.setOnClickListener(v -> {
                 boolean open = synopsis.getMaxLines() != Integer.MAX_VALUE;
@@ -105,6 +153,7 @@ public class SeriesActivity extends AppCompatActivity {
         }
 
         RecyclerView rv = findViewById(R.id.recycler);
+        this.rv = rv;
         adapter = new EpisodeAdapter(this::askEpisode);
         rv.setLayoutManager(new LinearLayoutManager(this));
         rv.setAdapter(adapter);
@@ -142,7 +191,10 @@ public class SeriesActivity extends AppCompatActivity {
                 episodes.clear();
                 episodes.addAll(s.episodes);
                 sortEpisodes();
+                buildRanges();
+                applyEpisodeView();
                 epCount.setText(getString(R.string.episode_count_fmt, episodes.size()));
+                syncResumeCard();
 
                 if (episodes.isEmpty()) {
                     empty.setText(R.string.err_net);
@@ -232,7 +284,90 @@ public class SeriesActivity extends AppCompatActivity {
         episodes.sort((a, b) -> asc
                 ? Integer.compare(epInt(a.num), epInt(b.num))
                 : Integer.compare(epInt(b.num), epInt(a.num)));
-        if (adapter != null) adapter.submit(new ArrayList<>(episodes));
+        applyEpisodeView();
+    }
+
+    /** Terapkan saring rentang pada urutan tampil ke adapter. */
+    private void applyEpisodeView() {
+        displayed.clear();
+        int[] r = (rangeIdx >= 0 && rangeIdx < ranges.size()) ? ranges.get(rangeIdx) : null;
+        for (EpisodeItem e : episodes) {
+            if (r != null) {
+                int n = epInt(e.num);
+                // Nomor tak terbaca tidak bisa ditempatkan — selalu lolos saring.
+                if (n > 0 && (n < r[0] || n > r[1])) continue;
+            }
+            displayed.add(e);
+        }
+        if (adapter != null) adapter.submit(new ArrayList<>(displayed));
+    }
+
+    /** Jumlah kolom grid episode mengikuti orientasi layar (4 potret / 6 lanskap). */
+    private GridLayoutManager gridLayout() {
+        boolean land = getResources().getConfiguration().orientation
+                == Configuration.ORIENTATION_LANDSCAPE;
+        return new GridLayoutManager(this, land ? 6 : 4);
+    }
+
+    // ------------------------------------------------------------ rentang
+
+    /**
+     * Susun chip rentang "Semua", "1–25", "26–50", … dari NOMOR episode.
+     * Hanya seri panjang (>25 episode) yang mendapat baris chip.
+     */
+    private void buildRanges() {
+        ranges.clear();
+        rangeIdx = -1;
+        if (epRangeRow == null || epRangeList == null) return;
+        epRangeList.removeAllViews();
+        if (episodes.size() <= 25) {
+            epRangeRow.setVisibility(View.GONE);
+            return;
+        }
+        int max = 0;
+        for (EpisodeItem e : episodes) max = Math.max(max, epInt(e.num));
+        if (max <= 25) {
+            epRangeRow.setVisibility(View.GONE);
+            return;
+        }
+        for (int lo = 1; lo <= max; lo += 25) {
+            ranges.add(new int[]{lo, Math.min(lo + 24, max)});
+        }
+        epRangeRow.setVisibility(View.VISIBLE);
+        addRangeChip(getString(R.string.range_all), -1);
+        for (int i = 0; i < ranges.size(); i++) {
+            int[] r = ranges.get(i);
+            addRangeChip(r[0] + "–" + r[1], i);
+        }
+        syncRangeChips();
+    }
+
+    private void addRangeChip(String label, final int idx) {
+        Chip c = new Chip(this);
+        c.setText(label);
+        c.setCheckable(true);
+        c.setChecked(idx == rangeIdx);
+        c.setEnsureMinTouchTargetSize(false);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        lp.setMarginEnd(dp(8));
+        epRangeList.addView(c, lp);
+        c.setOnClickListener(v -> {
+            rangeIdx = idx;
+            applyEpisodeView();
+            syncRangeChips();
+        });
+    }
+
+    private void syncRangeChips() {
+        if (epRangeList == null) return;
+        int n = epRangeList.getChildCount();
+        // Anak ke-0 = "Semua" (idx -1), sisanya mengikuti urutan ranges.
+        for (int i = 0; i < n; i++) {
+            View v = epRangeList.getChildAt(i);
+            if (v instanceof Chip) ((Chip) v).setChecked((i - 1) == rangeIdx);
+        }
     }
 
     private void syncSortButton() {
@@ -253,6 +388,60 @@ public class SeriesActivity extends AppCompatActivity {
     }
 
     // ------------------------------------------------------- pilihan episode
+
+    // ------------------------------------------------- lanjutkan menonton
+
+    /**
+     * Kartu Lanjutkan Menonton: tontonan terbaru judul ini (cocok series_url,
+     * fallback URL halaman). Hanya tampil bila ada baris riwayatnya.
+     */
+    private void syncResumeCard() {
+        if (resumeCard == null) return;
+        HistoryItem best = null;
+        String key = bookmarkKey();
+        if (!key.isEmpty() && store != null) {
+            // all() sudah urut watched_at DESC — ambil yang pertama cocok.
+            for (HistoryItem h : store.all()) {
+                if (key.equals(h.seriesUrl)) {
+                    best = h;
+                    break;
+                }
+            }
+        }
+        resumeItem = best;
+        if (best == null) {
+            resumeCard.setVisibility(View.GONE);
+            return;
+        }
+        resumeCard.setVisibility(View.VISIBLE);
+        if (resumeThumb != null && !thumb.isEmpty()) ImageLoader.load(thumb, resumeThumb);
+        if (resumeLine != null) {
+            int n = epInt(best.epTitle);
+            String epNum = n > 0 ? String.valueOf(n)
+                    : (best.epTitle == null ? "" : best.epTitle);
+            resumeLine.setText(getString(R.string.resume_line_fmt,
+                    epNum, Utils.clock(best.posMs), Utils.clock(best.durMs)));
+        }
+        if (resumeProgress != null) resumeProgress.setProgress(best.percent());
+    }
+
+    /** Putar tontonan terakhir persis seperti membuka episode biasa. */
+    private void playResume() {
+        if (resumeItem == null || resumeItem.epUrl == null
+                || resumeItem.epUrl.isEmpty()) return;
+        EpisodeItem fake = new EpisodeItem();
+        fake.url = resumeItem.epUrl;
+        fake.title = resumeItem.epTitle == null ? "" : resumeItem.epTitle;
+        fake.num = "";
+        openEpisode(fake);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Riwayat bisa bertambah dari Player — segarkan kartu resume.
+        syncResumeCard();
+    }
 
     /** Ketuk episode: Putar Sekarang / Unduh / Batal (ala AL, tanpa login). */
     private void askEpisode(EpisodeItem item) {
@@ -316,16 +505,65 @@ public class SeriesActivity extends AppCompatActivity {
         bookmarks.refresh(seriesUrl, BookmarkStore.buildStatus(s.status, siteCount));
     }
 
-    /** Simpan / lepas simpan judul ini pada tab Tersimpan. */
+    /** Ketuk bookmark: tersimpan = lepas langsung; belum = sheet "Simpan ke". */
     private void toggleBookmark() {
         String key = bookmarkKey();
         if (key.isEmpty()) return;
+        if (bookmarks.has(key)) {
+            bookmarks.removeByUrl(key);
+            syncBookmarkButton();
+            return;
+        }
+        askBookmarkCat(key);
+    }
 
+    /** Sheet pilihan kategori sekali ketuk + baris "+ Kategori baru". */
+    private void askBookmarkCat(final String key) {
+        final List<BookmarkStore.Cat> cats = bookmarks.cats();
+        String[] names = new String[cats.size() + 1];
+        for (int i = 0; i < cats.size(); i++) names[i] = cats.get(i).name;
+        names[cats.size()] = getString(R.string.new_category);
+        final int[] sel = {0};
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.save_to_title)
+                .setSingleChoiceItems(names, 0, (d, which) -> {
+                    sel[0] = which;
+                    if (which == cats.size()) {
+                        d.dismiss();
+                        askNewCat(key);
+                    }
+                })
+                .setPositiveButton(R.string.save_label, (d, w) -> {
+                    if (sel[0] >= cats.size()) return;
+                    doSaveBookmark(key, cats.get(sel[0]).id);
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    /** Dialog nama kategori baru lalu simpan ke kategori tersebut. */
+    private void askNewCat(final String key) {
+        final EditText et = new EditText(this);
+        et.setHint(R.string.new_category_hint);
+        et.setSingleLine(true);
+        et.setFilters(new InputFilter[]{new InputFilter.LengthFilter(20)});
+        int p = dp(20);
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.new_category)
+                .setView(et, p, p / 2, p, p / 2)
+                .setPositiveButton(R.string.save_label, (d, w) -> {
+                    long id = bookmarks.addCat(et.getText().toString());
+                    doSaveBookmark(key, id < 0 ? 0 : id);
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .show();
+    }
+
+    private void doSaveBookmark(String key, long catId) {
         int siteCount = episodes.size();
         if (siteCount <= 0) siteCount = BookmarkStore.parseCount(statusText);
         String status = BookmarkStore.buildStatus(statusText, siteCount);
-
-        bookmarks.toggle(key, title, thumb, status, siteCount);
+        bookmarks.save(key, title, thumb, status, siteCount, catId);
         syncBookmarkButton();
     }
 
@@ -387,21 +625,21 @@ public class SeriesActivity extends AppCompatActivity {
     }
 
     private int indexOf(String url) {
-        for (int n = 0; n < episodes.size(); n++) {
-            if (url != null && url.equals(episodes.get(n).url)) return n;
+        for (int n = 0; n < displayed.size(); n++) {
+            if (url != null && url.equals(displayed.get(n).url)) return n;
         }
         return -1;
     }
 
     private ArrayList<String> extractUrls() {
         ArrayList<String> out = new ArrayList<>();
-        for (EpisodeItem e : episodes) out.add(e.url);
+        for (EpisodeItem e : displayed) out.add(e.url);
         return out;
     }
 
     private ArrayList<String> extractTitles() {
         ArrayList<String> out = new ArrayList<>();
-        for (EpisodeItem e : episodes) out.add(e.title);
+        for (EpisodeItem e : displayed) out.add(e.title);
         return out;
     }
 

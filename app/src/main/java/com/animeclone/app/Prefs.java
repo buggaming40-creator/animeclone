@@ -153,6 +153,17 @@ public final class Prefs {
         sp(c).edit().putInt(KEY_PLAYER_RATIO, ratio).apply();
     }
 
+    private static final String KEY_PLAYER_PIP = "player_pip";
+
+    /** Mini-player PiP saat keluar player ketika video berputar; menyala bawaan. */
+    public static boolean playerPip(Context c) {
+        return sp(c).getBoolean(KEY_PLAYER_PIP, true);
+    }
+
+    public static void setPlayerPip(Context c, boolean on) {
+        sp(c).edit().putBoolean(KEY_PLAYER_PIP, on).apply();
+    }
+
     // ----------------------------------------------------------- pencarian
 
     /** Pencarian terakhir, terbaru di depan. */

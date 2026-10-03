@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +25,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -43,10 +46,16 @@ public class SearchFragment extends Fragment {
     private ProgressBar progress;
     private View emptyBox;
     private TextView empty;
+    private TextView searchCount;
     private LinearLayout recentsBox;
     private LinearLayout recentsList;
     private View btnClear;
     private boolean searched;
+
+    /** Debounce live search 600ms + penjaga basi (stale-guard). */
+    private final Handler searchHandler = new Handler(Looper.getMainLooper());
+    private Runnable pendingSearch;
+    private int searchSeq;
 
     @Nullable @Override
     public View onCreateView(@NonNull LayoutInflater inf, @Nullable ViewGroup grp,
@@ -59,6 +68,7 @@ public class SearchFragment extends Fragment {
         progress = v.findViewById(R.id.progress);
         emptyBox = v.findViewById(R.id.emptyBox);
         empty = v.findViewById(R.id.empty);
+        searchCount = v.findViewById(R.id.searchCount);
         ImageView emptyIcon = v.findViewById(R.id.emptyIcon);
         recentsBox = v.findViewById(R.id.recentsBox);
         recentsList = v.findViewById(R.id.recentsList);
@@ -95,11 +105,30 @@ public class SearchFragment extends Fragment {
         input.addTextChangedListener(new SimpleTextWatcher() {
             @Override public void onTextChanged(CharSequence s) {
                 btnClear.setVisibility(s != null && s.length() > 0 ? View.VISIBLE : View.GONE);
+                // Live search: debounce 600ms; kosong = kembali ke recents.
+                if (pendingSearch != null) searchHandler.removeCallbacks(pendingSearch);
+                int len = s == null ? 0 : s.toString().trim().length();
+                if (len >= 3) {
+                    pendingSearch = () -> doSearch();
+                    searchHandler.postDelayed(pendingSearch, 600);
+                } else if (len == 0) {
+                    searched = false;
+                    adapter.submit(new ArrayList<>());
+                    showEmpty(0);
+                    hideCount();
+                    showRecents();
+                }
             }
         });
 
         showRecents();
         return v;
+    }
+
+    @Override
+    public void onDestroyView() {
+        if (pendingSearch != null) searchHandler.removeCallbacks(pendingSearch);
+        super.onDestroyView();
     }
 
     @Override
@@ -126,6 +155,7 @@ public class SearchFragment extends Fragment {
         final String q = input.getText().toString().trim();
         if (q.isEmpty()) return;
         if (getContext() == null) return;
+        if (pendingSearch != null) searchHandler.removeCallbacks(pendingSearch);
 
         InputMethodManager imm = (InputMethodManager)
                 requireContext().getSystemService(Context.INPUT_METHOD_SERVICE);
@@ -133,22 +163,44 @@ public class SearchFragment extends Fragment {
 
         progress.setVisibility(View.VISIBLE);
         emptyBox.setVisibility(View.GONE);
+        hideCount();
 
+        final int seq = ++searchSeq;
         Async.go(() -> Oploverz.search(q), new Async.Done<List<AnimeItem>>() {
             @Override public void ok(List<AnimeItem> items) {
+                // Abaikan hasil basi (ketikan baru sudah dikirim).
+                if (seq != searchSeq || !isAdded()) return;
                 progress.setVisibility(View.GONE);
                 adapter.submit(items);
                 searched = true;
                 if (!items.isEmpty()) Prefs.addRecent(requireContext(), q);
                 showEmpty(items.isEmpty() ? R.string.empty_search2 : 0);
+                showCount(items, q);
                 showRecents();
             }
 
             @Override public void err(Throwable t) {
+                if (seq != searchSeq || !isAdded()) return;
                 progress.setVisibility(View.GONE);
+                hideCount();
                 showEmpty(R.string.err_net);
             }
         });
+    }
+
+    /** "N hasil untuk 'q'" — sembunyi saat kosong/recents. */
+    private void showCount(List<AnimeItem> items, String q) {
+        if (searchCount == null) return;
+        if (items == null || items.isEmpty()) {
+            searchCount.setVisibility(View.GONE);
+            return;
+        }
+        searchCount.setText(getString(R.string.search_count_fmt, items.size(), q));
+        searchCount.setVisibility(View.VISIBLE);
+    }
+
+    private void hideCount() {
+        if (searchCount != null) searchCount.setVisibility(View.GONE);
     }
 
     private void showEmpty(int msg) {

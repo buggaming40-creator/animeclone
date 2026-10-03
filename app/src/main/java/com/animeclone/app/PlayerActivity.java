@@ -1,9 +1,12 @@
 package com.animeclone.app;
 
 import android.annotation.SuppressLint;
+import android.app.PictureInPictureParams;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.Handler;
+import android.util.Rational;
 import android.view.View;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -752,6 +755,43 @@ public class PlayerActivity extends AppCompatActivity {
             if (d > 0 && d != androidx.media3.common.C.TIME_UNSET) current.durMs = d;
         }
         current.watchedAt = System.currentTimeMillis();
+    }
+
+    // ------------------------------------------------- mini-player (PiP)
+
+    /**
+     * Keluar player saat video berputar → mini-player PiP 16:9
+     * (bisa dimatikan di Setelan → Player).
+     */
+    @Override
+    protected void onUserLeaveHint() {
+        if (Prefs.playerPip(this) && exoStarted && player != null && player.isPlaying()) {
+            try {
+                enterPictureInPictureMode(new PictureInPictureParams.Builder()
+                        .setAspectRatio(new Rational(16, 9))
+                        .build());
+            } catch (Throwable ignored) {
+                // Perangkat tanpa dukungan PiP — tetap keluar seperti biasa.
+            }
+        }
+        super.onUserLeaveHint();
+    }
+
+    @Override
+    public void onPictureInPictureModeChanged(boolean isInPip, Configuration newConfig) {
+        super.onPictureInPictureModeChanged(isInPip, newConfig);
+        if (isInPip) {
+            if (topbar != null) topbar.setVisibility(View.GONE);
+            if (sideRail != null) sideRail.setVisibility(View.GONE);
+            if (modeBadge != null) modeBadge.setVisibility(View.GONE);
+            if (qualityBadge != null) qualityBadge.setVisibility(View.GONE);
+            if (playerView != null) playerView.setUseController(false);
+        } else {
+            if (playerView != null) playerView.setUseController(true);
+            if (topbar != null && exoStarted) topbar.setVisibility(View.VISIBLE);
+            updateRail();
+            syncQualityLabel();
+        }
     }
 
     private void releasePlayer() {

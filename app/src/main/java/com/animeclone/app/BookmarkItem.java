@@ -25,6 +25,9 @@ public class BookmarkItem {
      */
     public int siteEp;
 
+    /** Kategori bookmark (id baris tabel `cat`); 0 = tanpa kategori/Semua. */
+    public long catId;
+
     /** Lencana "Ada Episode Baru!" aktif bila situs punya lebih banyak episode. */
     public boolean hasNewEpisode() {
         return siteEp > 0 && siteEp > lastSeenEp;

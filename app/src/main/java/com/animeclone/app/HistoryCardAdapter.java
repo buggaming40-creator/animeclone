@@ -48,6 +48,16 @@ public class HistoryCardAdapter extends RecyclerView.Adapter<HistoryCardAdapter.
         h.title.setText(it.title == null ? "" : it.title);
         h.badge.setText(epLabel(it.epTitle));
         ImageLoader.load(it.thumb, h.thumb);
+        // Sisa/total waktu + bilah kemajuan — hanya bila durasi tercatat.
+        if (it.durMs > 0) {
+            h.time.setText(Utils.clock(it.posMs) + " / " + Utils.clock(it.durMs));
+            h.time.setVisibility(View.VISIBLE);
+            h.progress.setProgress(it.percent());
+            h.progress.setVisibility(View.VISIBLE);
+        } else {
+            h.time.setVisibility(View.GONE);
+            h.progress.setVisibility(View.GONE);
+        }
         h.itemView.setOnClickListener(x -> { if (pick != null) pick.onPick(it); });
     }
 
@@ -62,12 +72,15 @@ public class HistoryCardAdapter extends RecyclerView.Adapter<HistoryCardAdapter.
 
     static class VH extends RecyclerView.ViewHolder {
         final ImageView thumb;
-        final TextView badge, title;
+        final TextView badge, title, time;
+        final android.widget.ProgressBar progress;
         VH(@NonNull View v) {
             super(v);
             thumb = v.findViewById(R.id.cardThumb);
             badge = v.findViewById(R.id.cardBadge);
             title = v.findViewById(R.id.cardTitle);
+            time = v.findViewById(R.id.cardTime);
+            progress = v.findViewById(R.id.cardProgress);
         }
     }
 }

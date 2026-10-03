@@ -39,6 +39,9 @@ public class BookmarkFragment extends Fragment {
     private ProgressBar progress;
     private Chip sortAlpha, sortAdded, sortUpdated;
     private int sortMode = BookmarkStore.SORT_ADDED;
+    private View catScroll;
+    private android.widget.LinearLayout catRow;
+    private long filterCatId;
 
     @Nullable @Override
     public View onCreateView(@NonNull LayoutInflater inf, @Nullable ViewGroup grp,
@@ -63,9 +66,13 @@ public class BookmarkFragment extends Fragment {
                 reload();
             }
         });
+        adapter.setCatLookup(id -> store == null ? "" : store.catName(id));
 
         rv.setLayoutManager(grid());
         rv.setAdapter(adapter);
+
+        catScroll = v.findViewById(R.id.catScroll);
+        catRow = v.findViewById(R.id.catRow);
 
         sortAlpha = v.findViewById(R.id.uiSortAlpha);
         sortAdded = v.findViewById(R.id.uiSortAdded);
@@ -122,7 +129,15 @@ public class BookmarkFragment extends Fragment {
     private void reload() {
         if (store == null || !isAdded()) return;
 
+        syncCatChips();
+
         List<BookmarkItem> items = store.all(sortMode);
+        if (filterCatId > 0) {
+            java.util.Iterator<BookmarkItem> it = items.iterator();
+            while (it.hasNext()) {
+                if (it.next().catId != filterCatId) it.remove();
+            }
+        }
         adapter.submit(items);
         totalText.setText(getString(R.string.bookmark_total, items.size()));
 
@@ -130,6 +145,40 @@ public class BookmarkFragment extends Fragment {
         emptyBox.setVisibility(none ? View.VISIBLE : View.GONE);
         progress.setVisibility(View.GONE);
         refresh.setRefreshing(false);
+    }
+
+    /** Chip saring kategori: Semua + tiap kategori; sembunyi bila belum ada. */
+    private void syncCatChips() {
+        if (catRow == null || catScroll == null || store == null) return;
+        List<BookmarkStore.Cat> cats = store.cats();
+        catRow.removeAllViews();
+        if (cats.size() <= 1) {
+            catScroll.setVisibility(View.GONE);
+            if (filterCatId != 0) filterCatId = 0;
+            return;
+        }
+        catScroll.setVisibility(View.VISIBLE);
+        for (final BookmarkStore.Cat c : cats) {
+            Chip chip = new Chip(requireContext());
+            chip.setText(c.name);
+            chip.setCheckable(true);
+            chip.setChecked(c.id == filterCatId);
+            chip.setEnsureMinTouchTargetSize(false);
+            android.widget.LinearLayout.LayoutParams lp =
+                    new android.widget.LinearLayout.LayoutParams(
+                            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT,
+                            android.widget.LinearLayout.LayoutParams.WRAP_CONTENT);
+            lp.setMarginEnd(dp(8));
+            catRow.addView(chip, lp);
+            chip.setOnClickListener(x -> {
+                filterCatId = c.id;
+                reload();
+            });
+        }
+    }
+
+    private int dp(float v) {
+        return Math.round(v * getResources().getDisplayMetrics().density);
     }
 
     private void open(BookmarkItem item) {
