@@ -18,7 +18,7 @@
         android:paddingTop="16dp"
         android:paddingBottom="24dp">
 
-        <!-- Profil tamu ala AL (tanpa login) -->
+        <!-- Identitas aplikasi -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -34,15 +34,14 @@
                 <View
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:background="@drawable/ui_bg_avatar" />
+                    android:background="@drawable/app_logo_bg" />
 
                 <ImageView
                     android:layout_width="32dp"
                     android:layout_height="32dp"
                     android:layout_gravity="center"
-                    android:contentDescription="@string/guest_name"
-                    android:src="@drawable/ic_person"
-                    app:tint="?attr/colorPrimary" />
+                    android:contentDescription="@string/logo_desc"
+                    android:src="@drawable/ic_play" />
             </FrameLayout>
 
             <LinearLayout
@@ -53,21 +52,20 @@
                 android:orientation="vertical">
 
                 <TextView
-                    android:id="@+id/uiProfileGreet"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/greet_night"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp" />
+                    android:text="@string/app_name"
+                    android:textColor="@color/text_primary"
+                    android:textSize="21sp"
+                    android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="@string/guest_name"
-                    android:textColor="@color/text_primary"
-                    android:textSize="21sp"
-                    android:textStyle="bold" />
+                    android:layout_marginTop="3dp"
+                    android:text="@string/tagline"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp" />
 
                 <TextView
                     android:id="@+id/versionLabel"
@@ -200,94 +198,6 @@
             android:paddingHorizontal="16dp"
             android:paddingVertical="14dp">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/quality_title"
-                android:textColor="@color/text_primary"
-                android:textSize="14sp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal">
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/uiQuality360"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checkable="true"
-                    android:minHeight="0dp"
-                    android:text="@string/quality_360p"
-                    android:textColor="@color/ui_chip_text"
-                    android:textSize="12sp"
-                    app:chipBackgroundColor="@color/ui_chip_fill"
-                    app:chipCornerRadius="99dp"
-                    app:chipMinHeight="34dp"
-                    app:chipStrokeColor="@color/ui_chip_stroke"
-                    app:chipStrokeWidth="1dp"
-                    app:ensureMinTouchTargetSize="false" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/uiQuality480"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:checkable="true"
-                    android:minHeight="0dp"
-                    android:text="@string/quality_480p"
-                    android:textColor="@color/ui_chip_text"
-                    android:textSize="12sp"
-                    app:chipBackgroundColor="@color/ui_chip_fill"
-                    app:chipCornerRadius="99dp"
-                    app:chipMinHeight="34dp"
-                    app:chipStrokeColor="@color/ui_chip_stroke"
-                    app:chipStrokeWidth="1dp"
-                    app:ensureMinTouchTargetSize="false" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/uiQuality720"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:checkable="true"
-                    android:minHeight="0dp"
-                    android:text="@string/quality_720p"
-                    android:textColor="@color/ui_chip_text"
-                    android:textSize="12sp"
-                    app:chipBackgroundColor="@color/ui_chip_fill"
-                    app:chipCornerRadius="99dp"
-                    app:chipMinHeight="34dp"
-                    app:chipStrokeColor="@color/ui_chip_stroke"
-                    app:chipStrokeWidth="1dp"
-                    app:ensureMinTouchTargetSize="false" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/uiQuality1080"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
-                    android:checkable="true"
-                    android:minHeight="0dp"
-                    android:text="@string/quality_1080p"
-                    android:textColor="@color/ui_chip_text"
-                    android:textSize="12sp"
-                    app:chipBackgroundColor="@color/ui_chip_fill"
-                    app:chipCornerRadius="99dp"
-                    app:chipMinHeight="34dp"
-                    app:chipStrokeColor="@color/ui_chip_stroke"
-                    app:chipStrokeWidth="1dp"
-                    app:ensureMinTouchTargetSize="false" />
-            </LinearLayout>
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/quality_hint"
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp" />
 
             <View
                 android:layout_width="match_parent"
@@ -311,47 +221,6 @@
 
                 <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/uiAutoplay"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="true" />
-            </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:layout_marginVertical="14dp"
-                android:background="@drawable/bg_divider" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/pip_title"
-                        android:textColor="@color/text_primary"
-                        android:textSize="14sp" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/pip_hint"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="12sp" />
-                </LinearLayout>
-
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switchPip"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:checked="true" />
@@ -434,6 +303,47 @@
                 android:text="@string/ratio_hint"
                 android:textColor="@color/text_secondary"
                 android:textSize="12sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginVertical="14dp"
+                android:background="@drawable/bg_divider" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/pip_title"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="@string/pip_hint"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <com.google.android.material.materialswitch.MaterialSwitch
+                    android:id="@+id/switchPip"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true" />
+            </LinearLayout>
         </LinearLayout>
 
         <!-- Penyimpanan -->
