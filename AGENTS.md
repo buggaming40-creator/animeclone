@@ -59,3 +59,8 @@ rantai tap cepat dalam SATU perintah shell lalu screenshot.
 - Dump uiautomator hanya memuat baris RecyclerView yang menempel (tidak bisa
   dipakai membuktikan seksi tidak ada); screenshot lebih terpercaya. Dump juga
   melewatkan node GONE dan lambat (kontrol player keburu hide).
+
+## Pelajaran build 2
+- JANGAN percaya "BUILD SUCCESSFUL in 1s": up-to-date check sering bohong di
+  sini. Rilis/uji SELALU `--rerun-tasks --no-build-cache`, lalu verifikasi
+  simbol baru di dex + timestamp/size APK berubah.
