@@ -211,4 +211,9 @@
     <string name="speed_title">Kecepatan Putar</string>
     <string name="server_title">Pilih Server</string>
     <string name="quality_info_fmt">Preferensi kualitas %1$s (diatur di Setelan → Player). Kualitas akhir mengikuti sumber video.</string>
+
+    <!-- Kontrol pemutar khusus (player_controls.xml) -->
+    <string name="play_pause">Putar/jeda</string>
+    <string name="prev_episode">Episode sebelumnya</string>
+    <string name="next_episode">Episode berikutnya</string>
 </resources>
