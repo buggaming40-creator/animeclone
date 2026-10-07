@@ -737,7 +737,7 @@ public class PlayerActivity extends AppCompatActivity {
             }
         } catch (Throwable ignored) {
         }
-        return Math.max(sb, cut) + dp(4);
+        return Math.max(sb, cut) + dp(12);
     }
 
     /** Tinggi status bar (tetap ada walau disembunyikan imersif). */
