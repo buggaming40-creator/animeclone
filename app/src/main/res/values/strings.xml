@@ -201,4 +201,9 @@
     <string name="pip_title">Mini-player (PiP)</string>
     <string name="pip_hint">Jendela kecil saat keluar player ketika video berputar</string>
     <string name="fullscreen">Layar penuh</string>
+    <string name="cast_title">Pengisi Suara</string>
+    <string name="share_title">Bagikan</string>
+    <string name="speed_title">Kecepatan Putar</string>
+    <string name="server_title">Pilih Server</string>
+    <string name="quality_info_fmt">Preferensi kualitas %1$s (diatur di Setelan → Player). Kualitas akhir mengikuti sumber video.</string>
 </resources>
