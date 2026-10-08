@@ -6,7 +6,7 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:paddingEnd="12dp"
-    android:paddingStart="8dp"
+    android:paddingStart="12dp"
     android:paddingTop="14dp"
     android:paddingBottom="8dp">
 
@@ -25,17 +25,17 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-semibold"
                 android:text="@string/section_genre"
                 android:textColor="@color/text_primary"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                android:textSize="20sp" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:text="@string/section_genre_hint"
-                android:textColor="@color/text_secondary"
+                android:textColor="@color/text_sub"
                 android:textSize="13sp" />
         </LinearLayout>
 
@@ -46,12 +46,12 @@
             android:background="@drawable/ui_bg_pill"
             android:clickable="true"
             android:focusable="true"
+            android:fontFamily="sans-serif-semibold"
             android:paddingHorizontal="12dp"
             android:paddingVertical="6dp"
             android:text="@string/genre_all"
             android:textColor="?attr/colorPrimary"
-            android:textSize="12sp"
-            android:textStyle="bold" />
+            android:textSize="12sp" />
     </LinearLayout>
 
     <GridLayout
@@ -74,7 +74,7 @@
             android:textColor="#FFFFFF"
             android:textSize="13sp"
             android:textStyle="bold"
-            app:cornerRadius="14dp" />
+            app:cornerRadius="99dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/uiGenre1"
@@ -88,7 +88,7 @@
             android:textColor="#FFFFFF"
             android:textSize="13sp"
             android:textStyle="bold"
-            app:cornerRadius="14dp" />
+            app:cornerRadius="99dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/uiGenre2"
@@ -102,7 +102,7 @@
             android:textColor="#3A2E00"
             android:textSize="13sp"
             android:textStyle="bold"
-            app:cornerRadius="14dp" />
+            app:cornerRadius="99dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/uiGenre3"
@@ -116,7 +116,7 @@
             android:textColor="#FFFFFF"
             android:textSize="13sp"
             android:textStyle="bold"
-            app:cornerRadius="14dp" />
+            app:cornerRadius="99dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/uiGenre4"
@@ -130,7 +130,7 @@
             android:textColor="#FFFFFF"
             android:textSize="13sp"
             android:textStyle="bold"
-            app:cornerRadius="14dp" />
+            app:cornerRadius="99dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/uiGenre5"
@@ -144,6 +144,6 @@
             android:textColor="#FFFFFF"
             android:textSize="13sp"
             android:textStyle="bold"
-            app:cornerRadius="14dp" />
+            app:cornerRadius="99dp" />
     </GridLayout>
 </LinearLayout>
