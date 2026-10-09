@@ -166,7 +166,7 @@ public class SearchFragment extends Fragment {
         hideCount();
 
         final int seq = ++searchSeq;
-        Async.go(() -> Oploverz.search(q), new Async.Done<List<AnimeItem>>() {
+        Async.go(() -> Sources.search(q), new Async.Done<List<AnimeItem>>() {
             @Override public void ok(List<AnimeItem> items) {
                 // Abaikan hasil basi (ketikan baru sudah dikirim).
                 if (seq != searchSeq || !isAdded()) return;

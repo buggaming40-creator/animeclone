@@ -398,7 +398,7 @@ public class HomeFragment extends Fragment {
             List<Oploverz.Series> lites = new ArrayList<>();
             for (AnimeItem a : probe) {
                 try {
-                    Oploverz.Series s = Oploverz.loadSeriesLite(a.url);
+                    Oploverz.Series s = Sources.loadSeriesLite(a.url);
                     if (s == null) continue;
                     lites.add(s);
                     String st = s.status == null ? "" : s.status;
